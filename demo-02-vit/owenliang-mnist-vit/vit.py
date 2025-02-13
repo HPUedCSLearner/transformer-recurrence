@@ -17,6 +17,9 @@ class ViT(nn.Module):
     def forward(self,x): # (batch_size,channel=1,width=28,height=28)
         x=self.conv(x) # (batch_size,channel=16,width=7,height=7)
         
+        # patchs 可以看作words，所以要转换维度
+        # 这样看之后，后面的emb(), 和pos_emb()就可以理解了
+        
         x=x.view(x.size(0),x.size(1),self.patch_count**2)   # (batch_size,channel=16,seq_len=49)
         x=x.permute(0,2,1)  # (batch_size,seq_len=49,channel=16)
         
@@ -24,7 +27,7 @@ class ViT(nn.Module):
         
         cls_token=self.cls_token.expand(x.size(0),1,x.size(2))  # (batch_size,1,emb_size)
         x=torch.cat((cls_token,x),dim=1)   # add [cls] token
-        x=self.pos_emb+x
+        x=self.pos_emb+x # position位置向量 (1,seq_len,emb_size)
         
         y=self.tranformer_enc(x) # 不涉及padding，所以不需要mask
         return self.cls_linear(y[:,0,:])   # 对[CLS] token输出做分类
